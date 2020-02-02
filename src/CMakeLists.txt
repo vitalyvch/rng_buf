@@ -8,8 +8,8 @@ add_library(rng_buf STATIC
 set_target_properties(rng_buf PROPERTIES
 	PREFIX ""
 	C_STANDARD 99
-	COMPILE_OPTIONS "-g;-O2;-pthread;-Wall;-Wextra;-std=gnu99"
-	LINK_FLAGS "-g -O2 -pthread")
+	COMPILE_OPTIONS "-O2;-pthread;-Wall;-Wextra;-std=gnu99"
+	LINK_FLAGS "-O2 -pthread")
 
 target_include_directories(rng_buf PUBLIC
 	${CMAKE_CURRENT_SOURCE_DIR}/..)
