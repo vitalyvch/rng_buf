@@ -1,4 +1,6 @@
-/** The implementation of rng_buf library
+/** The implementation of rng_buf_mt library
+ *
+ * This is multi-threaded version with avoided race-condition
  *
  * @author Vitalii Chernookyi
  *                           
@@ -20,7 +22,7 @@
 #include "rng_buf.h"
 
 
-static const char rng_buf_default_name[] = "rng_buf";
+static const char rng_buf_default_name[] = "rng_buf_mt";
 
 static inline uint64_t min_size2size(size_t min_size)
 {
@@ -94,12 +96,12 @@ rng_buf_t *rng_buf_create(const char *name, size_t min_size, _Bool use_file_in_t
 	}
 
 	// We've got a new shared memory segment fd open.
-	// Now set it's length to 2x what we really want and mmap it in.
-	if (ftruncate(shm_fd, (off_t)2 * size) == -1)
+	// Now set it's length to 3x what we really want and mmap it in.
+	if (ftruncate(shm_fd, (off_t)3 * size) == -1)
 		goto return_null;
 
 	unsigned char * first_copy =
-		mmap(0, 2 * size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, (off_t)0);
+		mmap(0, 3 * size, PROT_READ | PROT_WRITE, MAP_SHARED, shm_fd, (off_t)0);
 
 	if (first_copy == MAP_FAILED)
 		goto return_null;
@@ -117,6 +119,20 @@ rng_buf_t *rng_buf_create(const char *name, size_t min_size, _Bool use_file_in_t
 		goto return_null;
 
 
+	// XXX Race condition avoiding trick. Do not remove.
+	// map the first half into the now available hole where the
+	// third part used to be.
+	unsigned char * third_copy = mmap((char*)first_copy + 2 * size,
+	                         size,
+	                         PROT_READ | PROT_WRITE,
+	                         MAP_SHARED | MAP_FIXED,
+	                         shm_fd,
+	                         (off_t)0);
+
+	if (third_copy == MAP_FAILED)
+		goto return_null;
+
+
 	close(shm_fd); // fd no longer needed.  The mapping is retained.
 	shm_fd = -1;
 
@@ -129,7 +145,7 @@ rng_buf_t *rng_buf_create(const char *name, size_t min_size, _Bool use_file_in_t
 	rng_buf_t *rb = malloc (sizeof(rb[0]) + strlen(seg_name));
 	if (NULL == rb) {
 		err_no = errno;
-		munmap(first_copy, 2 * size);
+		munmap(first_copy, 3 * size);
 		errno = err_no;
 		goto return_null;
 	}
@@ -159,7 +175,7 @@ void rng_buf_destroy(rng_buf_t* *rb)
 {
 	int res;
 
-	res = munmap(rb[0]->base, 2 * rb[0]->size);
+	res = munmap(rb[0]->base, 3 * rb[0]->size);
 
 	(void) res;
 

@@ -41,3 +41,9 @@ in advance. src/rng_buf_tests could be a start point for it.
 ### Example
 
 Use src/rng_buf_tests.cc as an example.
+
+### Multi-threading
+
+There is a special version of library for the multi-threaded apps.
+This version has suffix 'mt' and avoids some rare race-condition.
+Threads synchronization is a responsibility of app.
