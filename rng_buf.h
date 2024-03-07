@@ -40,49 +40,17 @@ typedef struct rng_buf rng_buf_t;
 rng_buf_t *rng_buf_create(const char *name, size_t min_size, _Bool use_file_in_tmp);
 void rng_buf_destroy(rng_buf_t* *rb);
 
-static inline unsigned char *
-rng_buf_write_address (struct rng_buf *rb)
-{
-	return rb->base + rb->write_offset_bytes;
-}
+unsigned char* rng_buf_write_address (struct rng_buf *rb);
 
-static inline void
-rng_buf_write_advance (struct rng_buf *rb,
-                           uint64_t size)
-{
-	rb->write_offset_bytes += size;
-}
+void rng_buf_write_advance (struct rng_buf *rb, uint64_t size);
 
-static inline unsigned char *
-rng_buf_read_address (struct rng_buf *rb)
-{
-	return rb->base + rb->read_offset_bytes;
-}
+unsigned char* rng_buf_read_address (struct rng_buf *rb);
 
-static inline void
-rng_buf_read_advance (struct rng_buf *rb,
-                          uint64_t size)
-{
-	rb->read_offset_bytes += size;
+void rng_buf_read_advance (struct rng_buf *rb, uint64_t size);
 
-	if (rb->read_offset_bytes >= rb->size)
-	{
-		rb->read_offset_bytes -= rb->size;
-		rb->write_offset_bytes -= rb->size;
-	}
-}
+uint64_t rng_buf_len (struct rng_buf *rb);
 
-static inline uint64_t
-rng_buf_len (struct rng_buf *rb)
-{
-	return rb->write_offset_bytes - rb->read_offset_bytes;
-}
-
-static inline uint64_t
-rng_buf_free_bytes (struct rng_buf *rb)
-{
-	return rb->size - rng_buf_len (rb);
-}
+uint64_t rng_buf_free_bytes (struct rng_buf *rb);
 
 #ifdef __cplusplus
 }
